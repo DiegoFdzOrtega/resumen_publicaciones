@@ -1,54 +1,51 @@
-# 🚀 Infraestructura de Servidores Jocarsa
-### Despliegue Híbrido: Apache + Flask Proxy Inverso
+# 🌐 Infraestructura de Servidores Jocarsa (Nodo 026)
 
-Este repositorio contiene la configuración y arquitectura para el despliegue de microservicios en un entorno de producción Linux. La arquitectura utiliza **Apache** como servidor principal y **Flask** como motor de aplicaciones dinámicas detrás de un **Proxy Inverso**.
-
----
-
-## 📂 Estructura del Proyecto
-
-*   `miniservidor.py`: Aplicación principal de Flask con soporte para cabeceras de proxy.
-*   `flask_app.service`: Archivo de unidad de Systemd para garantizar alta disponibilidad.
-*   `apache_conf/`:
-    *   `jocarsa.com.conf`: VirtualHost para el dominio principal.
-    *   `colores.jocarsa.com.conf`: Configuración para el subdominio de recursos estáticos.
-    *   `flask.jocarsa.com.conf`: Configuración del Proxy Inverso con soporte SSL/HTTPS.
+Este repositorio contiene la documentación y configuración de un **entorno de producción híbrido** diseñado para el despliegue de microservicios Python bajo un servidor perimetral robusto.
 
 ---
 
-## 🛠️ Arquitectura del Sistema
+## 📋 ¿Qué es este proyecto?
+Es una arquitectura de **Proxy Inverso**. Implementa un servidor web **Apache** como puerta de enlace (Gateway) y una aplicación **Flask** como motor de lógica de backend. En lugar de exponer Python directamente a internet, usamos Apache como escudo.
 
-El flujo de tráfico se organiza de la siguiente manera:
+## ⚙️ ¿Qué hace el sistema?
+1.  **Gestión de Tráfico:** Apache recibe todas las peticiones en los puertos estándar (`80`, `443`).
+2.  **Filtrado y Seguridad:** Apache gestiona el cifrado **SSL/HTTPS** y protege la aplicación de accesos no autorizados.
+3.  **Puente de Datos:** Mediante `mod_proxy`, Apache reenvía las peticiones dinámicas a un proceso **Gunicorn** que ejecuta la app Flask internamente en el puerto `5000`.
+4.  **Respuesta:** Flask procesa la lógica y Apache entrega el resultado final al usuario.
 
-1.  **Tráfico Estático (Puerto 80):** Apache sirve directamente los archivos desde `/var/www/html/`.
-2.  **Tráfico Dinámico (Puerto 443):**
-    *   El usuario conecta via **HTTPS** a `flask.jocarsa.com`.
-    *   **Apache** recibe la petición, gestiona el certificado SSL y actúa como **Proxy Inverso**.
-    *   La petición se redirige internamente a **Gunicorn** ejecutándose en `127.0.0.1:5000`.
-    *   **Flask** procesa la lógica y devuelve la respuesta.
+## 🎯 ¿Para qué funciona?
+*   **Seguridad:** Aísla la aplicación Flask del contacto directo con ataques externos.
+*   **Rendimiento:** Apache es mucho más eficiente sirviendo archivos estáticos (HTML, CSS, imágenes).
+*   **Alta Disponibilidad:** Gracias a **Systemd**, la aplicación se reinicia automáticamente si detecta un fallo.
+*   **Organización:** Permite gestionar múltiples subdominios (`colores.jocarsa.com`, `flask.jocarsa.com`) de forma centralizada.
 
 ---
 
-## 🚀 Guía de Instalación y Despliegue
+## 🛠️ Stack Tecnológico
+*   **Gateway:** Apache 2.4 (`mod_proxy`, `mod_ssl`)
+*   **Backend:** Flask 3.x (Python)
+*   **WSGI Server:** Gunicorn
+*   **Daemon:** Systemd (Gestión de procesos)
 
-### 1. Configuración de Flask (Entorno Aislado)
+---
+
+## 📂 Archivos Críticos
+
+| Archivo | Función |
+| :--- | :--- |
+| `miniservidor.py` | Aplicación Flask con middleware `ProxyFix`. |
+| `flask_app.service` | Configuración del demonio para ejecución en segundo plano. |
+| `*.conf` | Archivos de VirtualHost para la configuración del Proxy. |
+
+---
+
+## 🚀 Mantenimiento y Logs
+Para monitorizar el estado del nodo en tiempo real:
+
 ```bash
-# Crear entorno virtual e instalar dependencias
-python3 -m venv venv
-source venv/bin/activate
-pip install flask gunicorn werkzeug
-2. Configuración de ApacheActiva los módulos necesarios para el proxy:Bashsudo a2enmod proxy proxy_http headers ssl
-sudo systemctl restart apache2
-Enlaza los VirtualHosts:Bashsudo ln -s /ruta/al/repo/flask.jocarsa.com.conf /etc/apache2/sites-available/
-sudo a2ensite flask.jocarsa.com.conf
-sudo apachectl configtest
-sudo systemctl reload apache2
-3. Persistencia con SystemdCopia el archivo de servicio para que la app arranque automáticamente:Bashsudo cp flask_app.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable flask_app
-sudo systemctl start flask_app
-📊 Monitorización y AuditoríaComandos esenciales para el mantenimiento del servidor:ComandoFunciónhtopMonitorización de recursos (CPU/RAM)journalctl -u flask_app -fLogs en tiempo real de la aplicación Flaskdf -hVerificación de espacio en discosystemctl status apache2Estado del servidor web principal📋 Requisitos de Producción[x] VPS: Servidor con acceso root (Debian/Ubuntu).[x] DNS: Registros tipo A configurados para jocarsa.com y subdominios.[x] SSL: Certificados instalados en /etc/apache2/ssl/.[x] ProxyFix: Implementado en miniservidor.py para corrección de IPs tras el proxy.Proyecto Intermodular DAM | Resumen de Publicación en Servidores
-### Consejos para tu README:
-*   **Personalización:** He usado los nombres de archivos que mencionaste (`miniservidor.py` y `flask_app.service`).
-*   **Bloques de código:** He usado resaltado de sintaxis para que los comandos `bash` se vean claros.
-*   **Tablas:** La tabla de monitorización ayuda a que el profesor vea que dominas
+# Ver estado de los servicios
+systemctl status apache2
+systemctl status flask_app
+
+# Auditoría de logs de Flask
+journalctl -u flask_app -f

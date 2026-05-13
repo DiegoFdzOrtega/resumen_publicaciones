@@ -1,57 +1,196 @@
-🚀 Infraestructura de Red Jocarsa (Nodo 026)
-Este proyecto consiste en el despliegue de una arquitectura de servidor profesional que combina la robustez de Apache con la flexibilidad de Flask (Python).
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistemas de Publicación | Jocarsa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Roboto+Mono:wght@400;500&family=Inter:wght@400;600&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        .header-font { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+        .mono { font-family: 'Roboto Mono', monospace; }
+        
+        .blueprint-card {
+            background: white;
+            border-top: 4px solid #0f172a;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
 
-🤔 ¿Qué es esto?
-Es un sistema de Proxy Inverso. En lugar de exponer nuestra aplicación Python directamente a Internet (lo cual es peligroso e ineficiente), colocamos a Apache como un "escudo" o intermediario que gestiona todo el tráfico entrante.
+        .file-tab {
+            background: #0f172a;
+            color: white;
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            font-family: 'Roboto Mono', monospace;
+        }
 
-⚙️ ¿Qué hace el sistema?
-El flujo de una petición funciona de la siguiente manera:
+        pre {
+            background: #f8fafc;
+            border-left: 3px solid #cbd5e1;
+            padding: 1.5rem;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            color: #334155;
+        }
 
-Recepción: El usuario hace una petición a flask.jocarsa.com.
+        .step-number {
+            font-size: 4rem;
+            line-height: 1;
+            opacity: 0.1;
+            font-weight: 800;
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12">
 
-Filtrado (Apache): Apache recibe la conexión, gestiona el cifrado SSL/HTTPS y comprueba que la petición es legítima.
+    <div class="max-w-6xl mx-auto">
+        <!-- HEADER INDUSTRIAL -->
+        <header class="flex flex-col md:flex-row justify-between items-end border-b-4 border-slate-900 pb-4 mb-12">
+            <div>
+                <h1 class="header-font text-6xl md:text-8xl leading-none">Despliegue</h1>
+                <p class="header-font text-2xl text-slate-500 tracking-widest">Infraestructura de Red / Jocarsa / 026</p>
+            </div>
+            <div class="text-right mt-4 md:mt-0">
+                <p class="mono text-xs font-bold uppercase underline">Node Status: Active</p>
+                <p class="mono text-xs text-slate-400 mt-1">Ref: PROYECTO_INTERMODULAR_2026</p>
+            </div>
+        </header>
 
-Puente (Proxy): Apache le pasa la petición "limpia" a nuestra app de Flask que corre internamente en el puerto 5000.
+        <!-- GRID DE CONTENIDO -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- SECCIÓN 1: CONCEPTOS -->
+            <section class="blueprint-card p-8 relative overflow-hidden">
+                <span class="step-number header-font">01</span>
+                <h2 class="header-font text-3xl mb-4">Tipologías de Nodo</h2>
+                <p class="text-sm mb-6 text-slate-600">Diferenciación técnica entre el servidor perimetral y el servidor de aplicaciones dinámicas.</p>
+                
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 border border-slate-200">
+                        <h3 class="font-bold uppercase text-xs tracking-widest mb-1 text-slate-400">Gateway</h3>
+                        <p class="font-semibold text-lg uppercase italic">Apache Server (80/443)</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 border border-slate-200">
+                        <h3 class="font-bold uppercase text-xs tracking-widest mb-1 text-slate-400">Application</h3>
+                        <p class="font-semibold text-lg uppercase italic text-indigo-600">Flask + Gunicorn (5000)</p>
+                    </div>
+                </div>
+            </section>
 
-Procesamiento (Flask): Python ejecuta la lógica y le devuelve el resultado a Apache.
+            <!-- SECCIÓN 2: VIRTUALHOSTS -->
+            <section class="blueprint-card p-8 relative overflow-hidden">
+                <span class="step-number header-font">02</span>
+                <h2 class="header-font text-3xl mb-4">VirtualHosts</h2>
+                <div class="mb-4 leading-tight">
+                    <span class="file-tab">colores.jocarsa.com.conf</span>
+                    <pre class="mono">
+&lt;VirtualHost *:80&gt;
+    ServerName colores.jocarsa.com
+    DocumentRoot /var/www/html/colores
+&lt;/VirtualHost&gt;</pre>
+                </div>
+                <div class="leading-tight">
+                    <span class="file-tab">jocarsa.com.conf</span>
+                    <pre class="mono">
+&lt;VirtualHost *:80&gt;
+    ServerName jocarsa.com
+    DocumentRoot /var/www/html/jocarsa
+&lt;/VirtualHost&gt;</pre>
+                </div>
+            </section>
 
-Respuesta: Apache entrega el contenido final al usuario.
+            <!-- SECCIÓN 3: PROXY INVERSO -->
+            <section class="blueprint-card p-8 md:col-span-2 relative overflow-hidden">
+                <span class="step-number header-font">03</span>
+                <h2 class="header-font text-3xl mb-4">Orquestación Proxy Inverso SSL</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1">
+                        <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                            Configuración del túnel seguro para <strong>flask.jocarsa.com</strong>. Apache actúa como terminador SSL y delega el tráfico a la instancia local.
+                        </p>
+                        <ul class="text-[10px] mono uppercase font-bold space-y-2 text-slate-400">
+                            <li># a2enmod proxy proxy_http</li>
+                            <li># a2enmod headers ssl</li>
+                            <li># systemctl restart apache2</li>
+                        </ul>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <span class="file-tab">flask.jocarsa.com.conf</span>
+                        <pre class="mono">
+&lt;VirtualHost *:443&gt;
+    ServerName flask.jocarsa.com
+    SSLEngine on
+    SSLCertificateFile /etc/apache2/ssl/jocarsa_combined.cer
 
-🎯 ¿Para qué funciona? (Ventajas)
-Seguridad: Flask nunca está en contacto directo con los ataques de Internet.
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:5000/
+    ProxyPassReverse / http://127.0.0.1:5000/
+&lt;/VirtualHost&gt;</pre>
+                    </div>
+                </div>
+            </section>
 
-Rendimiento: Apache gestiona los archivos estáticos (imágenes, CSS) de forma mucho más rápida que Python.
+            <!-- SECCIÓN 4: FLASK & SYSTEMD -->
+            <section class="blueprint-card p-8 relative overflow-hidden">
+                <span class="step-number header-font">04</span>
+                <h2 class="header-font text-3xl mb-4">Software & Logic</h2>
+                <span class="file-tab">miniservidor.py</span>
+                <pre class="mono text-xs mb-6">
+from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-Estabilidad: Gracias a Systemd, si la aplicación de Python falla, el sistema la reinicia automáticamente sin intervención humana.
+app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
-Centralización: Permite tener varios subdominios (colores.jocarsa.com, jocarsa.com, etc.) conviviendo en la misma máquina de forma organizada.
+@app.route("/")
+def home():
+    return "DEPLOY_OK"</pre>
 
-🛠️ Especificaciones Técnicas
-1. Servidor Perimetral (Apache)
-Ubicado en /etc/apache2/sites-available/.
+                <span class="file-tab">flask_app.service</span>
+                <pre class="mono text-xs">
+[Service]
+ExecStart=/home/miniservidor/venv/bin/gunicorn --bind 127.0.0.1:5000 miniservidor:app
+Restart=always
+User=www-data</pre>
+            </section>
 
-Modo: Proxy Inverso (mod_proxy).
+            <!-- SECCIÓN 5: OPS -->
+            <section class="blueprint-card p-8 relative overflow-hidden bg-slate-900 text-white border-t-0">
+                <span class="step-number header-font text-white opacity-20">05</span>
+                <h2 class="header-font text-3xl mb-6 text-indigo-400">Operations Checklist</h2>
+                <div class="grid grid-cols-2 gap-4 text-xs mono">
+                    <div class="border border-slate-700 p-4">
+                        <p class="text-indigo-400 mb-2">/ DNS /</p>
+                        A Record -> IP<br>CNAME -> Subdom
+                    </div>
+                    <div class="border border-slate-700 p-4">
+                        <p class="text-indigo-400 mb-2">/ SSL /</p>
+                        Let's Encrypt<br>Certbot Auto
+                    </div>
+                    <div class="border border-slate-700 p-4">
+                        <p class="text-indigo-400 mb-2">/ MONITOR /</p>
+                        htop<br>df -h
+                    </div>
+                    <div class="border border-slate-700 p-4">
+                        <p class="text-indigo-400 mb-2">/ LOGS /</p>
+                        journalctl -f<br>access.log
+                    </div>
+                </div>
+            </section>
 
-SSL: Configurado para encriptación de datos en tránsito.
+        </div>
 
-2. Motor de Aplicación (Flask + Gunicorn)
-Ubicado en /home/miniservidor/.
+        <footer class="mt-12 text-center">
+            <p class="header-font text-4xl text-slate-300">JOCARSA INFRASTRUCTURE // 2026</p>
+        </footer>
+    </div>
 
-WSGI: Usamos Gunicorn para permitir que Flask maneje múltiples peticiones a la vez.
-
-Middleware: Implementación de ProxyFix para que Flask sepa la IP real del usuario y no la del proxy.
-
-3. Gestión de Procesos (Systemd)
-Servicio: flask_app.service
-
-Función: Garantiza que el proceso miniservidor:app esté siempre en ejecución.
-
-🚀 Comandos Rápidos
-Bash
-# Ver si todo está vivo
-systemctl status apache2
-systemctl status flask_app
-
-# Ver los logs en tiempo real (vital para depurar)
-journalctl -u flask_app -f
-Proyecto Intermodular DAM | Ingeniería de Sistemas Jocarsa 2026
+</body>
+</html>
