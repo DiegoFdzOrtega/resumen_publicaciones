@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Despliegue | Infraestructura Jocarsa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+        :root { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        code, pre { font-family: 'Fira Code', monospace; }
+        .sidebar-item:hover { background-color: #f1f5f9; color: #4f46e5; }
+        .code-container { background-color: #0f172a; color: #f1f5f9; border-radius: 0.75rem; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .section-card { background: white; border-radius: 1rem; padding: 2rem; border: 1px solid #e2e8f0; margin-bottom: 2rem; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Sidebar Navegación -->
+    <aside class="fixed top-0 left-0 h-full w-72 bg-white border-r border-slate-200 hidden lg:block overflow-y-auto z-10">
+        <div class="p-8">
+            <div class="flex items-center gap-2 mb-8">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">J</div>
+                <span class="text-xl font-bold tracking-tight">Jocarsa Docs</span>
+            </div>
+            <nav class="space-y-1">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Contenido</p>
+                <a href="#intro" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">0. Introducción</a>
+                <a href="#tipos" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">1. Arquitectura de Servidores</a>
+                <a href="#vhosts" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">2. Virtualhosts (Jocarsa)</a>
+                <a href="#colores" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">3. Subdominio Colores</a>
+                <a href="#proxy" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">4. Proxy Inverso SSL</a>
+                <a href="#systemd" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">5. Flask como Servicio</a>
+                <a href="#contratacion" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">6. Checklist Producción</a>
+                <a href="#monitor" class="sidebar-item block px-3 py-2 rounded-md text-sm transition">7. Monitorización</a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="lg:ml-72 p-4 md:p-12 max-w-5xl">
+        
+        <!-- Header -->
+        <header id="intro" class="mb-12">
+            <div class="flex items-center gap-2 text-indigo-600 font-bold text-sm mb-4 uppercase tracking-widest">
+                <span class="w-10 h-1 bg-indigo-600"></span> Despliegue de Aplicaciones
+            </div>
+            <h1 class="text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Publicación en Servidores</h1>
+            <p class="text-xl text-slate-600 leading-relaxed italic">Guía técnica completa para la migración de Apache a Flask utilizando Proxy Inverso, Gunicorn y Systemd.</p>
+        </header>
+
+        <!-- 1. Tipos de Servidor -->
+        <section id="tipos" class="section-card">
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
+                <i class="fas fa-server text-indigo-500"></i> 1. Tipos de Servidor
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-xl font-bold text-slate-900">Apache (Puerto 80)</h3>
+                    <p class="text-slate-600">Servidor multipropósito. Su función principal es servir archivos estáticos y aplicaciones bajo el Stack LAMP (PHP). Su punto de montaje estándar es <code>/var/www/html</code>.</p>
+                    <span class="inline-block bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold uppercase italic">Uso: Contenido General</span>
+                </div>
+                <div class="space-y-4 border-l border-slate-100 pl-8">
+                    <h3 class="text-xl font-bold text-slate-900">Flask (Puertos Altos)</h3>
+                    <p class="text-slate-600">Micro-framework de Python. Opera en puertos específicos (5000, 5001...). Dado que el usuario final no suele acceder por estos puertos, es obligatorio el uso de un <strong>Proxy Inverso</strong>.</p>
+                    <span class="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase italic font-mono">127.0.0.1:5000</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Virtualhost -->
+        <section id="vhosts" class="section-card">
+            <div class="flex justify-between items-start mb-6">
+                <h2 class="text-3xl font-bold">2. Virtualhost de jocarsa.com</h2>
+                <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded uppercase tracking-tighter">Configuración</span>
+            </div>
+            <p class="mb-4">Permite que el servidor identifique qué carpeta servir según el dominio solicitado:</p>
+            
+            <div class="code-container">
+                <div class="flex justify-between mb-2 text-xs text-slate-500 font-mono italic">
+                    <span>/etc/apache2/sites-available/jocarsa.com.conf</span>
+                </div>
+<pre class="overflow-x-auto text-sm">
+&lt;VirtualHost *:80&gt;
+    ServerName jocarsa.com
+    ServerAlias www.jocarsa.com
+    DocumentRoot /var/www/html/jocarsa
+    &lt;Directory /var/www/html/jocarsa&gt;
+        AllowOverride All
+        Require all granted
+    &lt;/Directory&gt;
+&lt;/VirtualHost&gt;</pre>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 font-mono text-xs">
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 italic">sudo a2ensite jocarsa.com.conf</div>
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 italic">sudo apachectl configtest</div>
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 italic">sudo systemctl reload apache2</div>
+            </div>
+        </section>
+
+        <!-- 3. Subdominio Colores -->
+        <section id="colores" class="section-card border-l-4 border-indigo-500">
+            <h2 class="text-3xl font-bold mb-4 italic">3. Subdominio colores.jocarsa.com</h2>
+            <p class="text-slate-600 mb-6">Mismo patrón para segmentar servicios adicionales en subdirectorios independientes.</p>
+            <div class="code-container">
+<pre class="overflow-x-auto text-sm">
+&lt;VirtualHost *:80&gt;
+    ServerName colores.jocarsa.com
+    DocumentRoot /var/www/html/colores
+&lt;/VirtualHost&gt;</pre>
+            </div>
+            <div class="bg-indigo-50 p-4 rounded-lg mt-4 flex items-center gap-4 text-sm text-indigo-800">
+                <i class="fas fa-info-circle text-xl"></i>
+                <p><strong>Recordatorio DNS:</strong> Es imperativo crear un registro <strong>A</strong> o <strong>CNAME</strong> en el panel de control del dominio que apunte "colores" a la IP del VPS.</p>
+            </div>
+        </section>
+
+        <!-- 4. Proxy Inverso -->
+        <section id="proxy" class="section-card">
+            <h2 class="text-3xl font-bold mb-6">4. Apache como Proxy Inverso</h2>
+            <p class="mb-6">Puente lógico entre el puerto 443 (HTTPS seguro) y la ejecución interna de Flask en el puerto 5000.</p>
+            
+            <div class="flex flex-wrap justify-center items-center gap-4 mb-8 bg-slate-50 p-6 rounded-xl border border-dashed border-slate-300">
+                <div class="text-center"><p class="text-[10px] font-bold text-slate-400 uppercase">Input</p><span class="font-bold text-sm">Usuario :443</span></div>
+                <i class="fas fa-arrow-right text-slate-300"></i>
+                <div class="text-center"><p class="text-[10px] font-bold text-slate-400 uppercase">Shield</p><span class="font-bold text-sm bg-indigo-600 text-white px-3 py-1 rounded">Apache VHost</span></div>
+                <i class="fas fa-arrow-right text-slate-300"></i>
+                <div class="text-center"><p class="text-[10px] font-bold text-slate-400 uppercase">Engine</p><span class="font-bold text-sm">gunicorn (5000)</span></div>
+                <i class="fas fa-arrow-right text-slate-300"></i>
+                <div class="text-center"><p class="text-[10px] font-bold text-slate-400 uppercase">App</p><span class="font-bold text-sm italic">miniservidor.py</span></div>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <p class="text-sm font-bold text-slate-700 uppercase italic underline">Habilitación de módulos:</p>
+                <code class="block bg-slate-100 p-4 rounded font-mono text-xs italic">sudo a2enmod proxy proxy_http headers && sudo systemctl restart apache2</code>
+            </div>
+
+            <div class="code-container">
+                <div class="text-xs text-indigo-400 mb-2 font-mono tracking-widest uppercase">/etc/apache2/sites-available/flask.jocarsa.com.conf</div>
+<pre class="overflow-x-auto text-sm">
+&lt;VirtualHost *:443&gt;
+    ServerName flask.jocarsa.com
+    SSLEngine on
+    SSLCertificateFile /etc/apache2/ssl/jocarsa_combined.cer
+    SSLCertificateKeyFile /etc/apache2/ssl/jocarsa.key
+
+    ProxyPreserveHost On
+    RequestHeader set X-Forwarded-Proto "https"
+    ProxyPass / http://127.0.0.1:5000/
+    ProxyPassReverse / http://127.0.0.1:5000/
+&lt;/VirtualHost&gt;</pre>
+            </div>
+        </section>
+
+        <!-- 5. Flask como Servicio -->
+        <section id="systemd" class="section-card bg-slate-900 text-white">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-400 italic">5. Flask como servicio (Systemd + Gunicorn)</h2>
+            
+            <div class="mb-8">
+                <h3 class="text-lg font-bold mb-4 border-b border-white/10 pb-2">Archivo: miniservidor.py</h3>
+                <div class="bg-black/50 p-4 rounded-lg font-mono text-sm text-emerald-400">
+<pre>
+from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+app = Flask(__name__)
+# Crucial para detectar HTTPS detrás del proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+@app.route("/")
+def home():
+    return "Servidor Operativo con SSL"</pre>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-bold mb-4 border-b border-white/10 pb-2 italic">Archivo: /etc/systemd/system/flask_app.service</h3>
+                <div class="bg-black/50 p-4 rounded-lg font-mono text-sm text-sky-400">
+<pre>
+[Unit]
+Description=Servicio Flask para flask.jocarsa.com
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/miniservidor/
+Environment="PATH=/home/miniservidor/venv/bin"
+ExecStart=/home/miniservidor/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 miniservidor:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target</pre>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-4 text-xs font-mono text-slate-400 uppercase italic">
+                <span>sudo systemctl daemon-reload</span>
+                <span>sudo systemctl enable flask_app</span>
+                <span>sudo systemctl start flask_app</span>
+            </div>
+        </section>
+
+        <!-- 6. Contratación -->
+        <section id="contratacion" class="section-card">
+            <h2 class="text-3xl font-bold mb-8 italic text-slate-900">6. Requisitos de Producción</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-6 bg-slate-50 rounded-xl">
+                    <i class="fas fa-hdd text-indigo-500 mb-3 text-2xl"></i>
+                    <h4 class="font-bold mb-2">Servidor (VPS)</h4>
+                    <p class="text-sm text-slate-600 italic">Infraestructura dedicada o virtualizada con Debian/Ubuntu.</p>
+                </div>
+                <div class="p-6 bg-slate-50 rounded-xl">
+                    <i class="fas fa-globe text-indigo-500 mb-3 text-2xl"></i>
+                    <h4 class="font-bold mb-2">Dominio</h4>
+                    <p class="text-sm text-slate-600 italic">Propiedad de jocarsa.com registrado y propagado.</p>
+                </div>
+                <div class="p-6 bg-slate-50 rounded-xl">
+                    <i class="fas fa-shield-alt text-indigo-500 mb-3 text-2xl"></i>
+                    <h4 class="font-bold mb-2">SSL</h4>
+                    <p class="text-sm text-slate-600 italic">Implementación de TLS mediante Let's Encrypt o manual.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Monitorización -->
+        <section id="monitor" class="section-card mb-20">
+            <h2 class="text-3xl font-bold mb-6">7. Auditoría y Recursos</h2>
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-900 text-white font-mono text-sm uppercase">
+                        <tr>
+                            <th class="p-4">Comando</th>
+                            <th class="p-4 italic">Utilidad Operativa</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 italic font-medium">
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-mono text-indigo-600">htop</td>
+                            <td class="p-4">Carga de CPU y RAM en tiempo real</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-mono text-indigo-600">df -h</td>
+                            <td class="p-4">Monitorización de almacenamiento disponible</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-mono text-indigo-600">systemctl status flask_app</td>
+                            <td class="p-4">Verificar salud del microservicio Python</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-mono text-indigo-600">journalctl -u flask_app -f</td>
+                            <td class="p-4">Logs de errores y tráfico de Flask en vivo</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-12 text-slate-400 text-xs font-bold tracking-[0.2em] uppercase">
+            Jocarsa Infrastructure · DAM 026 · 2026
+        </footer>
+    </main>
+
+</body>
+</html>

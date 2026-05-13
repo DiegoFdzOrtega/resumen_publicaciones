@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve miniservidor
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/usuario/proyecto
+Environment="PATH=/home/usuario/proyecto/venv/bin"
+ExecStart=/home/usuario/proyecto/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 miniservidor:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
